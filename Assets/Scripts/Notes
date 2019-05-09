@@ -1,0 +1,11 @@
+make jumping standard height
+no more holding for jump
+
+short hop, normal hop, double jump
+hold down for > 6 frames for normal hop
+else short hop (used fixed update for frame counting)
+only normal hop in the air
+
+turn during hop
+
+no need for relic list, just add to stat

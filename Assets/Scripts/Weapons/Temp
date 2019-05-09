@@ -1,0 +1,437 @@
+/*
+	Pistol weapon. Child of weapon class
+	 */
+    PistolBullet myBullet;
+
+    bool bonusShot;
+    int bonusShotCount;
+    int bonusShotCounter;
+    bool buff1;
+    int buff1Chance;
+    int buff1Value;
+    int buff1Counter;
+    bool buff2;
+    bool buff2Active;
+    int buff2Counter;
+    int buff2Assist;
+    bool buff3;
+    bool buff3Active;
+    int buff3Counter;
+    float buff3Assist;
+    bool buff4;
+
+
+    //For UI
+    PlayerBuff myBuff1;
+    PlayerBuff myBuff2;
+    PlayerBuff myBuff3;
+
+    //Grab all the resources we need
+    void Awake()
+    {
+        myStats = GetComponent<PlayerStats>();
+
+        myUI = GetComponentInChildren<PlayerUI>();
+        bullet = (GameObject)Resources.Load("Prefabs/WeaponPrefabs/PistolBullet", typeof(GameObject));
+        BuffPrefab = (GameObject)Resources.Load("Prefabs/PlayerBuff", typeof(GameObject));
+        button = (GameObject)Resources.Load("Prefabs/SkillTreeButton", typeof(GameObject));
+        myBullet = bullet.GetComponent<PistolBullet>();
+
+    }
+
+    //Initialize variables
+    void Start()
+    {
+        damage = 1;     
+        critRate = 0;
+        critDamage = 1.5f;
+        bulletSpeed = 7.5f;
+
+        bonusShot = false;
+        bonusShotCount = 8;
+        bonusShotCounter = 0;
+        buff1 = false;
+        buff1Chance = 0;
+        buff1Counter = 0;
+        buff2 = false;
+        buff2Active = false;
+        buff2Counter = 0;
+        buff2Assist = 0;
+
+        loadResources();
+        setUpTree();
+    }
+
+    void loadResources()
+    {
+        Sprite temp = Resources.Load<Sprite>("Images/Weapons/PistolBuff5");
+        Transform t = Instantiate(BuffPrefab, transform.position, Quaternion.identity).transform;
+        myBuff1 = t.gameObject.GetComponent<PlayerBuff>();
+        myBuff1.buffImage.sprite = temp;
+        myUI.addBuffChild(t);
+
+        t = Instantiate(BuffPrefab, transform.position, Quaternion.identity).transform;
+        temp = Resources.Load<Sprite>("Images/Weapons/PistolBuff12");
+        myBuff2 = t.gameObject.GetComponent<PlayerBuff>();
+        myBuff2.buffImage.sprite = temp;
+        myUI.addBuffChild(t);
+
+        t = Instantiate(BuffPrefab, transform.position, Quaternion.identity).transform;
+        temp = Resources.Load<Sprite>("Images/Weapons/PistolBuff11");
+        myBuff3 = t.gameObject.GetComponent<PlayerBuff>();
+        myBuff3.buffImage.sprite = temp;
+        myUI.addBuffChild(t);
+    }
+
+    //Set up our skill tree (see skill tree class for details)
+    void setUpTree()
+    {
+        int[] index = {2, 6, 14};
+
+        //0
+        SkillTreeNode temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        string[] text = {"Crit Rate Boost", "Increase crit rate when firing with this weapon", "Nothing"};
+        float[] values = {10, -1};
+        float[] scale = {1};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff0"), null);
+        temp.transform.SetParent(tree.transform, true);
+        //1
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Damage Boost", "Increases base damage when firing with this weapon", "Nothing"};
+        values = new float[]{10, -1};
+        scale = new float[]{1};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff1"), null);
+        temp.transform.SetParent(tree.transform, true);
+        //2
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Attack Rate Boost (Crit Path)", "Increases attack rate when firing with this weapon", "Crit Rate Boost"};
+        values = new float[]{5, 3};
+        scale = new float[]{.05f};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff2"), tree.transform.GetChild(0).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //3
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Bonus Shot", "Send a shot with double crit chance after firing a certain number of bullets", "Crit Rate Boost"};
+        values = new float[]{5, 3};
+        scale = new float[]{1};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff3"),tree.transform.GetChild(0).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //4
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Attack Rate Boost (Damage Path)", "Increases base damage when firing with this weapon", "Damage Boost"};
+        values = new float[]{5, 3};
+        scale = new float[]{.05f};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff4"), tree.transform.GetChild(1).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //5
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Pistol Buff", "On firing, chance to aquire a damage buff for all weapons", "Damage Boost"};
+        values = new float[]{5, 3};
+        scale = new float[]{5};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff5"), tree.transform.GetChild(1).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //6
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Crit Damage Boost", "Increases damage when getting a critical hit", "Attack Rate Boost (Crit Path)"};
+        values = new float[]{10, 5};
+        scale = new float[]{.1f};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff6"), tree.transform.GetChild(2).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //7
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Crit Rate Boost v2", "Further increases crit rate when firing with this weapon", "Attack Rate Boost (Crit Path)"};
+        values = new float[]{10, 5};
+        scale = new float[]{.1f};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff7"), tree.transform.GetChild(2).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //8
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Super Bonus Shot", "Buffs the bonus shot to give another bonus on top of the original crit bonus", "Bonus Shot"};
+        values = new float[]{10, 5};
+        scale = new float[]{2};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff8"), tree.transform.GetChild(3).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //9
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Sacrificial Speed", "Decreases attack speed to boost crit damage and crit rate", "Bonus Shot"};
+        values = new float[]{10, 5};
+        scale = new float[]{.07f, 3, .2f};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff9"), tree.transform.GetChild(3).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //10
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Damage boost v2", "Increases base damage when firing with this weapon", "Attack Rate Boost (Damage Path)"};
+        values = new float[]{5, 5};
+        scale = new float[]{2};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff10"), tree.transform.GetChild(4).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //11
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Speed buff", "Chance to increase your move rate on firing", "Attack Rate Boost (Damage Path)"};
+        values = new float[]{10, 5};
+        scale = new float[]{.1f};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff11"), tree.transform.GetChild(4).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //12
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"Soul Booster", "On firing, chance to gain a counter that records the number of enemies killed in a time period. After the buff ends, gain a buff that increases this weapons damage based on kill count", "Pistol Buff"};
+        values = new float[]{5, 5};
+        scale = new float[]{3};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff12"), tree.transform.GetChild(5).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+        //13
+        temp = Instantiate(button, new Vector2(), Quaternion.identity).GetComponent<SkillTreeNode>();
+        text = new string[]{"MedKit drop", "Chance to heal yourself on firing this weapon", "Pistol Buff"};
+        values = new float[]{5, 5};
+        scale = new float[]{1, 2};
+        temp.setValues(text, values, scale, Resources.Load<Sprite>("Images/Weapons/PistolBuff13"), tree.transform.GetChild(5).GetComponent<SkillTreeNode>());
+        temp.transform.SetParent(tree.transform, true);
+
+        updateNodeList();
+        updateWeaponStats();
+        treeUI.updateButtonPosition(nodes, index);
+    }
+
+    public void updateNodeList()
+    {
+        nodes = new SkillTreeNode[tree.transform.childCount];
+        int count = 0;
+        
+        foreach (Transform child in tree.transform)
+        {
+            nodes[count] = child.GetComponent<SkillTreeNode>();
+            count++;
+        }
+    }
+
+    //Calculate all our stats based on values from the skill tree, player stats, and base values
+    public override void updateWeaponStats()
+    {
+        damage = 1 + myStats.damage + (int)nodes[1].value[0] + (int)nodes[10].value[0];
+        attackRate = (myStats.attackRate / 2) - (nodes[2].value[0]) - (nodes[4].value[0]) + nodes[9].value[0];
+        critRate = 0 + myStats.critRate + (int)(nodes[0].value[0]) + (int)(nodes[7].value[0]) + (int)nodes[9].value[1];
+        critDamage = 1.5f + myStats.critDamage + (nodes[7].value[0]) + nodes[9].value[2];
+
+        bonusShot = nodes[3].currentLevel > 0;
+        bonusShotCount = 8 - nodes[3].currentLevel;
+
+        buff1 = nodes[5].currentLevel > 0;
+        buff1Chance = (int)nodes[5].value[0];
+
+        buff2 = nodes[12].currentLevel > 0;
+        
+        buff3 = nodes[11].currentLevel > 0;
+
+        buff4 = nodes[13].currentLevel > 0;
+        limitCheck();
+    }
+
+    //Attack speed cant be less than .1f
+    void limitCheck()
+    {
+        if (attackRate < .1f)
+        {
+            attackRate = .1f;
+        }
+    }
+
+    int temp;
+    int tempCritRate;
+    //Calculate ability ones damage
+    int calculateAbilityOne()
+    {
+        temp = damage;
+        tempCritRate = critRate;
+
+        int rand = Random.Range(0, 100);
+        //If we have a bonus shot, double crit chance
+        if (bonusShot)
+        {
+            if (bonusShotCounter == bonusShotCount)
+            {
+                tempCritRate *= 2;
+            }
+        }
+
+        if (rand < tempCritRate)
+        {
+            temp = (int)(float)(temp * critDamage);
+        }
+
+        //Chance for buff
+        if (buff1)
+        {
+            rand = Random.Range(0, 100);
+            if (rand < buff1Chance)
+            {
+                buff1Start();
+            }
+        }
+
+        //Soul Booster
+        if (buff2)
+        {
+            rand = Random.Range(0, 100);
+            if (rand < 5)
+            {
+                buff2Start();
+            }
+        }
+
+        //Speed buff
+        if (buff3)
+        {
+            rand = Random.Range(0, 100);
+            if (rand < 10)
+            {
+                buff3Start();
+            }
+        }
+
+        //Heal
+        if (buff4)
+        {
+            rand = Random.Range(0, 100);
+            if (rand < nodes[13].value[1])
+            {
+                buff4Start();
+            }
+        }
+
+        return temp;
+    }
+
+    //Give us damage if we weren't buffed before, set buff counter to 3
+    public void buff1Start()
+    {
+        if (buff1Counter <= 0)
+        {
+            buff1Value = nodes[9].currentLevel;
+            myStats.damage += buff1Value;
+            myBuff1.gameObject.SetActive(true);
+            myUI.updateChildrenPosition();
+            Invoke("buff1Expire", 1);
+        }
+        buff1Counter = 3;
+        myBuff1.buffTime.text = "" + buff1Counter;
+    }
+    //Decrease buff counter by 1, if its 0, remove our bonus damage
+    public void buff1Expire()
+    {
+        buff1Counter--;
+        myBuff1.buffTime.text = "" + buff1Counter;
+        if (buff1Counter <= 0)
+        {
+            myStats.damage -= buff1Value;
+            myBuff1.gameObject.SetActive(false);
+            myUI.updateChildrenPosition();
+        }
+        else
+        {
+            Invoke("buff1Expire", 1);
+        }
+    }
+
+    public void buff2Start()
+    {
+        if (!buff2Active)
+        {
+            buff2Active = true;
+            myBuff2.gameObject.SetActive(true);
+            buff2Assist = myStats.enemiesKilled;
+            buff2Counter = (int)nodes[12].value[0];
+            myBuff2.buffTime.text = "" + buff2Counter;
+            myUI.updateChildrenPosition();
+            Invoke("buff2Expire", 1);
+        }
+    }
+    public void buff2Expire()
+    {
+        buff2Counter--;
+        myBuff2.buffTime.text = "" + buff2Counter;
+        if (buff2Counter <= 0)
+        {
+            buff2Assist = myStats.enemiesKilled - buff2Assist;
+            myStats.damage += buff2Assist;
+            buff2Counter = (int)nodes[12].value[0];
+            myBuff2.buffTime.text = "" + buff2Counter;
+            myUI.updateChildrenPosition();
+            Invoke("buff2End", 1);
+        }
+        else
+        {
+            Invoke("buff2Expire", 1);
+        }
+    }
+    public void buff2End()
+    {
+        buff2Counter--;
+        myBuff2.buffTime.text = "" + buff2Counter;
+        if (buff2Counter <= 0)
+        {
+            myStats.damage -= buff2Assist;
+            myBuff2.gameObject.SetActive(false);
+            myUI.updateChildrenPosition();
+            buff2Active = false;
+        }
+        else
+        {
+            Invoke("buff2End", 1);
+        }
+    }
+
+    public void buff3Start()
+    {
+        buff3Counter = 3;
+        if (!buff3Active)
+        {
+            buff3Assist = nodes[11].value[0];
+            myStats.speed += buff3Assist;
+            buff3Active = true;
+            myBuff3.gameObject.SetActive(true);
+            myUI.updateChildrenPosition();
+            myBuff3.buffTime.text = "" + buff3Counter;
+            Invoke ("buff3Expire", 1f);
+        }
+    }
+
+    public void buff3Expire()
+    {
+        buff3Counter--;
+        myBuff3.buffTime.text = "" + buff3Counter;
+        if (buff3Counter <= 0)
+        {
+            myStats.speed -= buff3Assist;
+            myBuff3.gameObject.SetActive(false);
+            myUI.updateChildrenPosition();
+            buff3Active = false;
+        }
+        else
+        {
+            Invoke("buff3Expire", 1f);
+        }
+    }
+
+    public void buff4Start()
+    {
+        myStats.heal((int)nodes[13].value[0]);
+    }
+
+    public override void assignTreeObject(GameObject tree)
+    {
+        this.tree = tree;
+        treeUI = tree.GetComponent<SkillTreeUI>();
+    }
+
+    //Shoot a bullet if its not on cool down
+    public override void abilityOne(Vector2 direction)
+    {
+        if (Time.time - attackTime >= attackRate || attackTime == 0)
+        {
+            myBullet.damage = calculateAbilityOne();
+            myBullet.direction = direction * bulletSpeed;
+            Instantiate(bullet, transform.position, Quaternion.identity);
+            attackTime = Time.time;
+            updateWeaponStats();
+        }
+    }
